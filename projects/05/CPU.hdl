@@ -40,4 +40,38 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+
+    Not(in = instruction[15], out = isAIns);
+    And(a = instruction[2], b = instruction[15], out = jmp1);
+    And(a = instruction[1], b = instruction[15], out = jmp2);
+    And(a = instruction[0], b = instruction[15], out = jmp3);
+    And(a = instruction[5], b = instruction[15], out = d1);
+    And(a = instruction[4], b = instruction[15], out = d2);
+    And(a = instruction[3], b = instruction[15], out = writeM);
+
+    //选择从A寄存器加载还是从内存加载
+    And(a = instruction[12], b = instruction[15], out = isLoadFromA);
+
+    //是否要把数据加载进入A寄存器
+    Or(a = isAIns, b = d1, out = loadToA);
+
+    Mux16(a = instruction, b = aluOut, sel = d1, out = outToA);
+    ARegister(in = outToA, load = loadToA, out = AOut);
+    
+    Mux16(a = AOut, b = inM, sel = isLoadFromA, out = aluIn2);
+    DRegister(in = aluOut, load = d2, out = aluIn1);
+
+    ALU(x = aluIn1, y = aluIn2, zx = instruction[11], nx = instruction[10], zy = instruction[9], ny = instruction[8], f = instruction[7], no = instruction[6], out = outM, out = aluOut, zr = zr, ng= ng);
+
+    //是否跳转。PC中load标识
+    And(a = jmp1, b = ng, out = ifJump1);
+    And(a = jmp2, b = zr, out = ifJump2);
+    Not(in = ng, out = nng);
+    Not(in = zr, out = nzr);
+    And(a = nng, b = nzr, out = ifPositive);
+    And(a = jmp3, b = ifPositive, out = ifJump3);
+    Or(a = ifJump1, b = ifJump2, out = tmp);
+    Or(a = tmp, b = ifJump3, out = jump);
+    PC(in = AOut, load = jump, reset = reset, inc = true, out[0..14] = pc);
+    And16(a = AOut, b[0..15] = true, out[0..14] = addressM);
 }
