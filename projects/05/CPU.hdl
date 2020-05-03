@@ -41,23 +41,28 @@ CHIP CPU {
     PARTS:
     // Put your code here:
 
+    //是否为A指令
     Not(in = instruction[15], out = isAIns);
+    //跳转位置
     And(a = instruction[2], b = instruction[15], out = jmp1);
     And(a = instruction[1], b = instruction[15], out = jmp2);
     And(a = instruction[0], b = instruction[15], out = jmp3);
+    //存储位置
     And(a = instruction[5], b = instruction[15], out = d1);
     And(a = instruction[4], b = instruction[15], out = d2);
     And(a = instruction[3], b = instruction[15], out = writeM);
 
-    //选择从A寄存器加载还是从内存加载
-    And(a = instruction[12], b = instruction[15], out = isLoadFromA);
+
 
     //是否要把数据加载进入A寄存器
     Or(a = isAIns, b = d1, out = loadToA);
 
+    //是从ALUoutput 还是从指令load数据进A寄存器
     Mux16(a = instruction, b = aluOut, sel = d1, out = outToA);
     ARegister(in = outToA, load = loadToA, out = AOut);
     
+    //选择从A寄存器加载还是从内存加载
+    And(a = instruction[12], b = instruction[15], out = isLoadFromA);
     Mux16(a = AOut, b = inM, sel = isLoadFromA, out = aluIn2);
     DRegister(in = aluOut, load = d2, out = aluIn1);
 
